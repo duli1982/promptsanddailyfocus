@@ -31,7 +31,7 @@
         .filter-button.active {
             background-color: #4f46e5; /* indigo-600 */
             color: white;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);\
         }
         /* Progress Bar */
         .progress-bar-inner {
@@ -72,6 +72,22 @@
             color: #4f46e5; /* indigo-600 */
             border-bottom-color: #4f46e5;
         }
+        /* Mobile menu styling */
+        .mobile-menu {
+            display: none; /* Hidden by default on small screens */
+        }
+        .mobile-menu.open {
+            display: flex; /* Shown when menu is open */
+            flex-direction: column;
+            align-items: center;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+         .mobile-menu .nav-link {
+            width: 100%; /* Full width for menu items */
+            text-align: center;
+            padding: 0.75rem 0; /* More padding for touch targets */
+         }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -82,11 +98,30 @@
                 <div class="flex items-center">
                     <a href="index.html" class="text-xl font-bold text-indigo-600">Gemini Suite</a>
                 </div>
-                <div class="flex items-center">
+                <div class="flex items-center md:hidden"> <!-- Menu button for mobile -->
+                    <button id="menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <!-- Icon when menu is closed -->
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <!-- Icon when menu is open -->
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="hidden md:flex items-center" id="desktop-menu"> <!-- Desktop navigation -->
                     <a href="index.html" id="nav-prompts" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Prompts Library</a>
                     <a href="daily-focus.html" id="nav-focus" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium ml-4">Daily Focus</a>
                 </div>
             </div>
+        </div>
+
+        <!-- Mobile menu, show/hide based on menu state. -->
+        <div class="mobile-menu md:hidden" id="mobile-menu">
+             <a href="index.html" id="nav-prompts-mobile" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">Prompts Library</a>
+            <a href="daily-focus.html" id="nav-focus-mobile" class="nav-link text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium mt-1">Daily Focus</a>
         </div>
     </nav>
 
@@ -150,6 +185,9 @@
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const cardCounter = document.getElementById('card-counter');
+         const menuButton = document.getElementById('menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
 
         // --- State Management ---
         function initializeData(focusPointsData) {
@@ -213,19 +251,19 @@
                     <p class="font-semibold mb-2 text-gray-700">Action Items:</p>
                     <ul class="space-y-2">${actionsHtml}</ul>
                     <div class="completion-banner hidden mt-4 p-4 bg-green-100 border-l-4 border-green-500 rounded-r-lg">
-                        <div class="flex">
-                            <div class="py-1">
-                                <svg class="h-6 w-6 text-green-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="font-bold text-green-800">All Actions Completed!</p>
-                                <p class="text-sm text-green-700">✨ Fantastic work! You've mastered this focus. ✨</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <div class="flex">\
+                            <div class="py-1">\
+                                <svg class="h-6 w-6 text-green-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">\
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />\
+                                </svg>\
+                            </div>\
+                            <div>\
+                                <p class="font-bold text-green-800">All Actions Completed!</p>\
+                                <p class="text-sm text-green-700">✨ Fantastic work! You\'ve mastered this focus. ✨</p>\
+                            </div>\
+                        </div>\
+                    </div>\
+                </div>\
             `;
             return cardElement;
         }
@@ -363,6 +401,17 @@
                     showCardInLibrary(currentIndex);
                 }
             });
+
+             // Mobile menu toggle
+            menuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('open');
+                // Toggle aria-expanded attribute
+                const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
+                menuButton.setAttribute('aria-expanded', !isExpanded);
+                 // Toggle the hamburger and close icons
+                menuButton.querySelector('svg:nth-child(2)').classList.toggle('hidden');
+                menuButton.querySelector('svg:nth-child(3)').classList.toggle('hidden');
+            });
         });
     </script>
     <script>
@@ -371,11 +420,16 @@
         const page = window.location.pathname.split('/').pop();
         const navPrompts = document.getElementById('nav-prompts');
         const navFocus = document.getElementById('nav-focus');
+         const navPromptsMobile = document.getElementById('nav-prompts-mobile');
+        const navFocusMobile = document.getElementById('nav-focus-mobile');
+
 
         if (page === 'index.html' || page === '') {
           if(navPrompts) navPrompts.classList.add('active');
+           if(navPromptsMobile) navPromptsMobile.classList.add('active');
         } else if (page === 'daily-focus.html') {
           if(navFocus) navFocus.classList.add('active');
+           if(navFocusMobile) navFocusMobile.classList.add('active');
         }
       });
     </script>
