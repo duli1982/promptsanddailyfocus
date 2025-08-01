@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Prompt Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4; /* Updated: Soft off-white background */
+            color: #4A4A4A; /* Updated: Dark gray text */
+        }
+
+        /* --- Custom Scrollbar for lists --- */
+        .scrollable-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollable-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .scrollable-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .scrollable-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* --- General Card Style with Hover Animation --- */
+        .prompt-block {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            background-color: #FFFFFF; /* Updated: Pure white cards */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); /* Updated: Softer shadow */
+            transition: transform 0.3s ease, box-shadow 0.3s ease; /* Added: Smooth transition for hover */
+        }
+        .prompt-block:hover {
+            transform: translateY(-5px); /* Added: Lift effect on hover */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Added: Deeper shadow on hover */
+        }
+
+        /* --- Homepage Category Card --- */
+        .category-card-list {
+            height: 200px; /* Fixed height for scrollable area */
+        }
+        .category-card-list a:hover {
+            color: #4A90E2; /* Updated: Accent color on hover */
+        }
+        .see-all-btn {
+            border: 1px solid #4A90E2; /* Updated: Accent color for border */
+            color: #4A90E2; /* Updated: Accent color for text */
+            transition: all 0.2s ease-in-out;
+        }
+        .see-all-btn:hover {
+            background-color: #4A90E2; /* Updated: Accent color for background */
+            color: white;
+        }
+
+        /* --- Detail Page Prompt Display --- */
+        .prompt-display-item {
+            border: 1px solid #e5e7eb; /* Updated: Softer border */
+            border-radius: 0.5rem;
+            background-color: #FFFFFF;
+        }
+
+        /* --- Quick Links Sidebar --- */
+        .quick-links-sidebar {
+            height: calc(100vh - 100px); /* Adjust height based on header */
+        }
+        .quick-links-sidebar a {
+            transition: color 0.2s ease;
+        }
+        .quick-links-sidebar a:hover, .quick-links-sidebar a.active {
+            color: #4A90E2; /* Updated: Accent color for active/hover links */
+        }
+
+        /* --- General UI Elements --- */
+        .main-heading {
+             color: #111827; /* Keep main headings darker for emphasis */
+        }
+        .accent-text {
+            color: #4A90E2;
+        }
+        .hidden {
+            display: none;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- =========== HOMEPAGE VIEW =========== -->
+    <div id="homepage-view" class="fade-in">
+        <header class="text-center py-12 px-4">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight main-heading">Gemini Prompt Library</h1>
+            <p class="max-w-2xl mx-auto text-lg text-gray-500 mt-4">
+                A curated collection of prompts to help you unlock the full potential of Gemini.
+            </p>
+        </header>
+        <main class="container mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+            <!-- Category cards will be injected here by JavaScript -->
+            <div id="category-cards-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </main>
+    </div>
+
+    <!-- =========== DETAIL VIEW =========== -->
+    <div id="detail-view" class="hidden">
+        <div class="flex">
+            <!-- Quick Links Sidebar (Right Side) -->
+            <aside
+                    class="w-1/4 max-w-xs fixed right-0 top-0 bottom-0 bg-white/50 backdrop-blur-sm
+                            border-l border-gray-200 p-6 flex flex-col"
+                    >
+                    <h2 class="text-lg font-bold mb-4 main-heading">Quick Links</h2>
+<!-- ① Search box -->
+  <input
+    type="text"
+    id="quick-links-search"
+    placeholder="🔍 Search links…"
+    class="mb-4 p-2 border border-gray-300 rounded w-full"
+  />
+
+<nav
+                        id="quick-links-sidebar"
+                        class="flex-1 overflow-y-auto pr-4 scrollable-list"
+                    >
+                        <!-- injected links… -->
+                    </nav>
+                    </aside>
+
+            <!-- Main Content (Left Side) -->
+            <main class="w-3/4 pr-4">
+                <div class="p-6 md:p-8">
+                    <button id="back-to-home-btn" class="text-gray-500 hover:text-black mb-8">&larr; Back to All Categories</button>
+                    <!-- Prompt content will be injected here by JavaScript -->
+                    <div id="prompt-display-area"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // --- DATA STRUCTURE ---
+        let promptData = {};
+
+        async function loadPrompts() {
+            try {
+                const response = await fetch('./prompts.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                promptData = data.promptData;
+                renderHomepage(); // Initialize UI after data loads
+            } catch (error) {
+                console.error('Failed to load prompts:', error);
+                // Display an error message to the user
+                const categoryCardsContainer = document.getElementById('category-cards-container');
+                categoryCardsContainer.innerHTML = `
+                    <div class="text-center text-red-500">
+                        <p>Error loading prompts. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // --- DOM ELEMENTS ---
+        const homepageView = document.getElementById('homepage-view');
+        const detailView = document.getElementById('detail-view');
+        const categoryCardsContainer = document.getElementById('category-cards-container');
+        const promptDisplayArea = document.getElementById('prompt-display-area');
+        const quickLinksSidebar = document.getElementById('quick-links-sidebar');
+        const backToHomeBtn = document.getElementById('back-to-home-btn');
+
+        // --- RENDER FUNCTIONS ---
+
+        /**
+         * Renders the initial homepage view with category cards.
+         */
+        function renderHomepage() {
+            categoryCardsContainer.innerHTML = '';
+            for (const categoryName in promptData) {
+                const category = promptData[categoryName];
+                const subCategories = Object.keys(category);
+
+                const card = document.createElement('div');
+                card.className = 'prompt-block flex flex-col';
+
+                let subCategoryLinks = subCategories.map(subName =>
+                    `<li><a href="#" class="block py-1.5 text-gray-500" data-category="${categoryName}" data-subcategory="${subName}">→ ${subName}</a></li>`
+                ).join('');
+
+                card.innerHTML = `
+                    <div class="p-6">
+                        <h2 class="text-xl font-bold text-center main-heading">Gemini Prompts for <span class="accent-text">${categoryName}</span></h2>
+                    </div>
+                    <div class="flex-grow px-6 category-card-list scrollable-list overflow-y-auto">
+                        <ul>${subCategoryLinks}</ul>
+                    </div>
+                    <div class="p-6 mt-auto">
+                        <button class="see-all-btn w-full py-2.5 rounded-md font-semibold" data-category="${categoryName}">See all prompts →</button>
+                    </div>
+                `;
+                categoryCardsContainer.appendChild(card);
+            }
+        }
+
+        /**
+         * Renders the detail view for a specific sub-category.
+         * @param {string} activeCategory - The main category to display.
+         * @param {string} activeSubCategory - The sub-category to display.
+         */
+        function renderDetailView(activeCategory, activeSubCategory) {
+            // Render the main prompt content
+            promptDisplayArea.innerHTML = '';
+            const subCategoryPrompts = promptData[activeCategory][activeSubCategory];
+
+            const header = document.createElement('h1');
+            header.className = 'text-3xl font-bold mb-8 main-heading';
+            header.innerHTML = `Gemini Prompts for <span class="accent-text">${activeSubCategory}</span>`;
+            promptDisplayArea.appendChild(header);
+
+            subCategoryPrompts.forEach(prompt => {
+                const promptEl = document.createElement('div');
+                promptEl.className = 'mb-8';
+                promptEl.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-2 main-heading">${prompt.title}</h3>
+                    <div class="prompt-display-item p-4 text-gray-700">
+                        <p>${prompt.content}</p>
+                    </div>
+                `;
+                promptDisplayArea.appendChild(promptEl);
+            });
+
+            // Render the quick links sidebar
+            quickLinksSidebar.innerHTML = '';
+            for (const categoryName in promptData) {
+                const categoryTitle = document.createElement('h4');
+                categoryTitle.className = 'font-bold mt-4 mb-2 main-heading';
+                categoryTitle.innerHTML = `Gemini Prompts for <span class="accent-text">${categoryName}</span>`;
+                quickLinksSidebar.appendChild(categoryTitle);
+
+                const subList = document.createElement('ul');
+                for (const subCategoryName in promptData[categoryName]) {
+                    const li = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.textContent = subCategoryName;
+                    link.dataset.category = categoryName;
+                    link.dataset.subcategory = subCategoryName;
+                    // Highlight the active link
+                    if (categoryName === activeCategory && subCategoryName === activeSubCategory) {
+                        link.className = 'active font-semibold';
+                    }
+                    li.appendChild(link);
+                    subList.appendChild(li);
+                }
+                quickLinksSidebar.appendChild(subList);
+            }
+        }
+
+        // --- NAVIGATION LOGIC ---
+
+        /**
+         * Switches the view from homepage to detail page.
+         * @param {string} category - The main category to show.
+         * @param {string} subCategory - The specific sub-category to show.
+         */
+        function showDetailView(category, subCategory) {
+            renderDetailView(category, subCategory);
+            homepageView.classList.add('hidden');
+            detailView.classList.remove('hidden');
+            detailView.classList.add('fade-in');
+            window.scrollTo(0, 0); // Scroll to top
+        }
+
+        /**
+         * Switches the view from detail page back to the homepage.
+         */
+        function showHomepage() {
+            detailView.classList.add('hidden');
+            homepageView.classList.remove('hidden');
+            homepageView.classList.add('fade-in');
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // Event listener for the homepage
+        categoryCardsContainer.addEventListener('click', (e) => {
+            const target = e.target;
+
+            // Handle "See all prompts" button click
+            if (target.classList.contains('see-all-btn')) {
+                const categoryName = target.dataset.category;
+                // Show the first sub-category by default
+                const firstSubCategory = Object.keys(promptData[categoryName])[0];
+                showDetailView(categoryName, firstSubCategory);
+            }
+
+            // Handle clicking on a sub-category link
+            if (target.tagName === 'A' && target.dataset.subcategory) {
+                e.preventDefault();
+                showDetailView(target.dataset.category, target.dataset.subcategory);
+            }
+        });
+
+        // Event listener for the detail view's quick links
+        quickLinksSidebar.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' && e.target.dataset.subcategory) {
+                e.preventDefault();
+                const category = e.target.dataset.category;
+                const subCategory = e.target.dataset.subcategory;
+                renderDetailView(category, subCategory); // Re-render the view
+            }
+        });
+
+        // Event listener for the "Back" button
+        backToHomeBtn.addEventListener('click', showHomepage);
+
+        // --- INITIAL LOAD ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPrompts();
+        });
+
+    </script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('quick-links-search');
+    // grab the <nav> itself
+    const nav = document.getElementById('quick-links-sidebar');
+
+    searchInput.addEventListener('input', () => {
+      const term = searchInput.value.trim().toLowerCase();
+
+      // pick up every link (or change selector if you have list-items)
+      const items = Array.from(nav.querySelectorAll('a'));
+
+      items.forEach(a => {
+        const text = a.textContent.toLowerCase();
+        a.style.display = text.includes(term) ? '' : 'none';
+      });
+    });
+  });
+</script>
+</body>
+</html>
